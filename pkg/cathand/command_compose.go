@@ -69,7 +69,7 @@ func SplitEvents(filename string, info []EventInfo) ([]EventData, error) {
 	chunkSize := 24
 
 	for i := 1; i < len(info); i++ {
-		if info[i].Touch || info[i].Position-info[previousIndex].Position >= 64 {
+		if info[i].Touch || info[i].Position-info[previousIndex].Position >= 32 {
 			var timeDiff float64
 
 			if info[i].Touch {
@@ -93,7 +93,7 @@ func SplitEvents(filename string, info []EventInfo) ([]EventData, error) {
 
 func WriteInputData(project *Project, data []EventData) {
 	for i := 0; i < len(data); i++ {
-		filename := project.InputFile(i) // fmt.Sprintf(filenameFormat, i)
+		filename := project.InputFile(i)
 		ioutil.WriteFile(filename, data[i].Data, 0644)
 	}
 }
