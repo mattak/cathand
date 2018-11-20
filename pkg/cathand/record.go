@@ -49,13 +49,13 @@ func RecordContinuouslyWithStopTrigger(sdcardProject *Project, sdcardFiles chan 
 			sdcardProject.VideoFile(count),
 			"--size", "1280x720",
 			"--bit-rate", "4000000",
-			"--time-limit", "5")
+			"--time-limit", "10")
 
 		return exec.Command("adb", "shell", "screenrecord",
 			sdcardProject.VideoFile(count),
 			"--size", "1280x720",
 			"--bit-rate", "4000000",
-			"--time-limit", "5")
+			"--time-limit", "10")
 	})
 
 	stopTrigger.Wait()

@@ -86,7 +86,10 @@ func SplitEvents(filename string, info []EventInfo) ([]EventData, error) {
 	}
 
 	for i := 1; i < len(info); i++ {
-		if info[i].Touch || info[i].Position-info[previousIndex].Position >= 32 {
+		instructionStep := info[i].Position - info[previousIndex].Position
+		timeStep := info[i].Epoch - info[previousIndex].Epoch
+
+		if info[i].Touch || instructionStep*instructionSize >= 2048 || timeStep >= 0.15 {
 			var timeDiff float64
 
 			if info[i].Touch {
