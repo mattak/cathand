@@ -1,6 +1,7 @@
 package cathand
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -20,6 +21,18 @@ type EventData struct {
 	Source string
 	Time   float64
 	Data   []byte
+}
+
+func DetectInstructionSize(data []byte) int {
+	for i := 1; i < len(data)/4; i++ {
+		i4 := i * 4
+
+		if data[0] == data[i4] && data[1] == data[i4+1] && data[2] == data[i4+2] && data[3] == data[i4+3] {
+			return i4
+		}
+	}
+
+	return -1
 }
 
 func ParseEventText(eventLogFile string) ([]EventInfo, error) {
@@ -66,7 +79,11 @@ func SplitEvents(filename string, info []EventInfo) ([]EventData, error) {
 	}
 
 	previousIndex := 0
-	chunkSize := 24
+	instructionSize := DetectInstructionSize(allbytes)
+
+	if instructionSize == -1 {
+		return nil, errors.New("InstructionSize is not detectable")
+	}
 
 	for i := 1; i < len(info); i++ {
 		if info[i].Touch || info[i].Position-info[previousIndex].Position >= 32 {
@@ -78,14 +95,14 @@ func SplitEvents(filename string, info []EventInfo) ([]EventData, error) {
 				timeDiff = info[i].Epoch - info[previousIndex].Epoch
 			}
 
-			bytes := allbytes[(previousIndex * chunkSize):(i * chunkSize)]
+			bytes := allbytes[(previousIndex * instructionSize):(i * instructionSize)]
 			data = append(data, EventData{Data: bytes, Time: timeDiff, Source: info[i].Source})
 			previousIndex = i
 		}
 	}
 
 	lastIndex := len(info) - 1
-	bytes := allbytes[(previousIndex * chunkSize):((lastIndex + 1) * chunkSize)]
+	bytes := allbytes[(previousIndex * instructionSize):((lastIndex + 1) * instructionSize)]
 	data = append(data, EventData{Data: bytes, Time: info[lastIndex].Epoch - info[previousIndex].Epoch, Source: info[lastIndex].Source})
 
 	return data, nil
