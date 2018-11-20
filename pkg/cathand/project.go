@@ -24,7 +24,7 @@ func NewProject(name string, extension string, prefix string) Project {
 		DeviceDir:    root + "/device",
 		RunShellFile: root + "/run.sh",
 		EventFile:    root + "/event.log",
-		SizeFile:     root + "/vm_size.log",
+		SizeFile:     root + "/wm_size.log",
 	}
 }
 

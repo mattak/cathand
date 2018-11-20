@@ -35,7 +35,7 @@ func CommandRecord(projectName string) {
 
 	// 2. save getprop.log
 	{
-		bytes := RunWaitWrite("adb", "shell", "vm", "size")
+		bytes := RunWaitWrite("adb", "shell", "wm", "size")
 		ioutil.WriteFile(project.SizeFile, bytes, 0644)
 	}
 
