@@ -25,3 +25,7 @@ clean:
 	$(GOCLEAN)
 	rm -r $(BINARY_DIR)
 
+.PHONY: install
+install:
+	cd cmd/cathand && go install
+
