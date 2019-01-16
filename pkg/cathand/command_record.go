@@ -7,7 +7,10 @@ import (
 )
 
 func GetInputDevices() []string {
-	inputs := strings.Split(string(RunWaitWrite("adb", "shell", "ls", "/dev/input")), " ")
+	inputsRaw := RunWaitWrite("adb", "shell", "ls", "/dev/input")
+	inputsStr := strings.Replace(NormalizeLineFeed(inputsRaw), "\n", " ", -1)
+
+	inputs := strings.Split(inputsStr, " ")
 	results := []string{}
 
 	for i := 0; i < len(inputs); i++ {
@@ -36,7 +39,7 @@ func CommandRecord(projectName string) {
 	// 2. save getprop.log
 	{
 		bytes := RunWaitWrite("adb", "shell", "wm", "size")
-		ioutil.WriteFile(project.SizeFile, bytes, 0644)
+		ioutil.WriteFile(project.SizeFile, NormalizeLineFeedBytes(bytes), 0644)
 	}
 
 	// 3. wait multi signal
@@ -65,12 +68,12 @@ func CommandRecord(projectName string) {
 	eventWg.Done()
 
 	// 5. write results
-	ioutil.WriteFile(project.EventFile, <-eventTextResult, 0644)
+	ioutil.WriteFile(project.EventFile, NormalizeLineFeedBytes(<-eventTextResult), 0644)
 	for i := 0; i < len(inputDevices); i++ {
 		ioutil.WriteFile(project.DeviceFile(inputDevices[i]), <-eventDataResults[i], 0644)
 	}
 
 	// 6. pull files
-	RunWait("adb","pull", sdcardProject.VideoDir, project.VideoDir)
+	RunWait("adb", "pull", sdcardProject.VideoDir, project.VideoDir)
 	RunWait("adb", "shell", "rm", "-r", sdcardProject.RootDir)
 }
