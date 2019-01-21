@@ -29,3 +29,10 @@ clean:
 install:
 	cd cmd/cathand && go install
 
+.PHONY: android
+android:
+	git submodule update --init
+	cd android_runner && ./gradlew clean assembleRelease
+	rsync -av android_runner/app/build/intermediates/cmake/release/obj android_bin/
+	find android_bin -type f -name '*.so' | sed 's|.so||g' | awk '{print "mv", $$1 ".so", $$1}' | sh
+
