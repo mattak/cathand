@@ -14,8 +14,11 @@ func RunWait(name string, arg ...string) {
 	fmt.Println(name + " " + strings.Join(arg, " "))
 
 	cmd := exec.Command(name, arg...)
-	cmd.Start()
-	cmd.Wait()
+	cmd.Stderr = os.Stderr
+	err := cmd.Start()
+	AssertError(err)
+	err = cmd.Wait()
+	AssertError(err)
 }
 
 func RunWaitWrite(name string, arg ...string) []byte {
@@ -80,7 +83,7 @@ func RunWaitKillWrite(result chan []byte, group *sync.WaitGroup, name string, ar
 	group.Wait()
 
 	cmd.Process.Signal(os.Signal(syscall.SIGINT))
-	cmd.Wait()
+	err = cmd.Wait()
 
 	result <- buffer.Bytes()
 }

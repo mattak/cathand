@@ -7,11 +7,13 @@ import (
 	"testing"
 )
 
-func Setup() {
+type FileUtilTestContext struct{}
+
+func (FileUtilTestContext) setup() {
 	os.RemoveAll("/tmp/test")
 }
 
-func TearDown() {
+func (FileUtilTestContext) tearDown() {
 	os.RemoveAll("/tmp/test")
 }
 
@@ -33,42 +35,45 @@ func checkMkdirp(path string) {
 }
 
 func TestMkdirp(t *testing.T) {
-	Setup()
-	defer TearDown()
+	context := FileUtilTestContext{}
+	context.setup()
+	defer context.tearDown()
 
 	checkMkdirp("/tmp/test")
 	checkMkdirp("/tmp/test/a/b/c")
 }
 
 func TestRemoveFile(t *testing.T) {
-	Setup()
-	defer TearDown()
+	context := FileUtilTestContext{}
+	context.setup()
+	defer context.tearDown()
 
 	os.MkdirAll("/tmp/test/a", os.ModePerm)
 	os.MkdirAll("/tmp/test/b", os.ModePerm)
 
 	if !isExists("/tmp/test/a") || !isExists("/tmp/test/b") {
-		log.Fatal("error creating directory")
+		t.Fatal("error creating directory")
 	}
 
 	cathand.RemoveFile("/tmp/test")
 
 	if isExists("/tmp/test/a") || isExists("/tmp/test/b") {
-		log.Fatal("error cannot remove directory")
+		t.Fatal("error cannot remove directory")
 	}
 }
 
 func TestFileExists(t *testing.T) {
-	Setup()
-	defer TearDown()
+	context := FileUtilTestContext{}
+	context.setup()
+	defer context.tearDown()
 
 	if cathand.FileExists("/tmp/test") {
-		log.Fatal("error directory already exists")
+		t.Fatal("error directory already exists")
 	}
 
 	os.MkdirAll("/tmp/test", os.ModePerm)
 
 	if !cathand.FileExists("/tmp/test") {
-		log.Fatal("error directory not exists")
+		t.Fatal("error directory not exists")
 	}
 }
