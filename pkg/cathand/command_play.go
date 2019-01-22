@@ -8,17 +8,30 @@ import (
 
 func AdbRsync(fromLocalFolder string, toDeviceFolder string) {
 	// NOTE: adb push raise error secure_mkdirs on nested directory. So do `find . -type d | xargs -n1 mkdir` before running
-	result := string(RunWaitWrite("find", fromLocalFolder, "-type", "d"))
-	localDirs := strings.Split(result, "\n")
+	{
+		result := string(RunWaitWrite("find", fromLocalFolder, "-type", "d"))
+		localDirs := strings.Split(result, "\n")
 
-	arguments := []string{"shell", "mkdir", "-p"}
-	for _, dir := range localDirs {
-		deviceDir := strings.Replace(dir, fromLocalFolder, toDeviceFolder, -1)
-		arguments = append(arguments, deviceDir)
+		arguments := []string{"shell", "mkdir", "-p"}
+		for _, dir := range localDirs {
+			deviceDir := strings.Replace(dir, fromLocalFolder, toDeviceFolder, -1)
+			arguments = append(arguments, deviceDir)
+		}
+		RunWait("adb", arguments...)
 	}
 
-	RunWait("adb", arguments...)
-	RunWait("adb", "push", fromLocalFolder+"/", toDeviceFolder)
+	{
+		result := string(RunWaitWrite("find", fromLocalFolder, "-type", "f"))
+		localFiles := strings.Split(result, "\n")
+
+		for _, localFile := range localFiles {
+			if len(localFile) < 1 {
+				continue;
+			}
+			deviceFile := strings.Replace(localFile, fromLocalFolder, toDeviceFolder, -1)
+			RunWait("adb", "push", localFile, deviceFile)
+		}
+	}
 }
 
 func CommandPlay(projectName string) {
