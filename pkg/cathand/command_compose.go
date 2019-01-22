@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -125,8 +125,8 @@ CPU_ABI=$(getprop ro.product.cpu.abi)
 }
 
 func CopyExecutable(project *Project) {
-	cmd := exec.Command("rsync", "-av", "android_bin/obj/", project.BinDir+"/")
-	AssertError(cmd.Run())
+	projectRoot := os.Getenv("GOPATH") + "/src/github.com/mattak/cathand/"
+	RunWait("rsync", "-av", projectRoot + "android_bin/obj/", project.BinDir+"/")
 }
 
 func CommandCompose(projectName string) {
@@ -149,4 +149,6 @@ func CommandCompose(projectName string) {
 	WriteEvent(&playProject, eventsMap)
 	WriteShell(&playProject, eventsMap)
 	CopyExecutable(&playProject)
+
+	fmt.Println("created: " + playProject.RootDir)
 }
