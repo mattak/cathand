@@ -32,8 +32,8 @@ func RecordContinuously(sdcardProject *Project, sdcardFiles chan []string) {
 
 	<-countCh
 
-	// XXX: hack wait for hardware processing last video file
-	time.Sleep(500 * time.Millisecond)
+	// XXX: hack wait for hardware processing of last video file
+	time.Sleep(1000 * time.Millisecond)
 
 	sdcardFiles <- nil
 }
@@ -59,11 +59,16 @@ func RecordContinuouslyWithStopTrigger(sdcardProject *Project, sdcardFiles chan 
 	})
 
 	stopTrigger.Wait()
+
+	// XXX: Wait for record end
+	time.Sleep(1000 * time.Millisecond)
+
 	signalCh <- syscall.SIGINT
 
 	<-countCh
 
-	time.Sleep(500 * time.Millisecond)
+	// XXX: Wait for mp4 processing
+	time.Sleep(1000 * time.Millisecond)
 
 	sdcardFiles <- nil
 }
