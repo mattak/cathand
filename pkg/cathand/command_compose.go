@@ -1,51 +1,39 @@
 package cathand
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-type EventInfo struct {
-	Epoch    float64
-	Touch    bool
-	Source   string
-	Position int
+type Event struct {
+	EpochSec  int64
+	EpochUsec int64
+
+	Type  uint16
+	Code  uint16
+	Value uint32
 }
 
-type EventData struct {
-	Source string
-	Time   float64
-	Data   []byte
-}
-
-func DetectInstructionSize(data []byte) int {
-	for i := 1; i < len(data)/4; i++ {
-		i4 := i * 4
-
-		if data[0] == data[i4] && data[1] == data[i4+1] && data[2] == data[i4+2] && data[3] == data[i4+3] {
-			return i4
-		}
-	}
-
-	return -1
-}
-
-func ParseEventText(eventLogFile string) ([]EventInfo, error) {
+func ParseEventFromFile(eventLogFile string) (map[string][]Event, error) {
 	data, err := ioutil.ReadFile(eventLogFile)
+
 	if err != nil {
 		return nil, err
 	}
 
-	lines := strings.Split(string(data), "\n")
-	regex := regexp.MustCompile("^\\[\\s*([\\d\\.]+)\\s*\\]\\s*/dev/input/(\\w+):\\s+[\\w\\_]+\\s+([\\w\\_]+)\\s+(\\w+)")
+	return ParseEvent(string(data))
+}
 
-	events := []EventInfo{}
-	position := 0
+func ParseEvent(data string) (map[string][]Event, error) {
+	lines := strings.Split(data, "\n")
+	regex := regexp.MustCompile("^\\[\\s*(\\d+)\\.(\\d+)\\s*\\]\\s*/dev/input/(\\w+):\\s+([\\w\\_]+)\\s+([\\w\\_]+)\\s+(\\w+)")
+
+	eventsMap := map[string][]Event{}
 
 	for i := 0; i < len(lines); i++ {
 		if !regex.MatchString(lines[i]) {
@@ -53,91 +41,92 @@ func ParseEventText(eventLogFile string) ([]EventInfo, error) {
 		}
 
 		matches := regex.FindStringSubmatch(lines[i])
-		epoch, err := strconv.ParseFloat(matches[1], 64)
+
+		epochSec, err := strconv.ParseInt(matches[1], 10, 32)
 		if err != nil {
 			return nil, err
 		}
 
-		eventDriverName := matches[2]
-		eventTag := matches[3]
-		eventValue := matches[4]
-		touched := eventTag == "ABS_MT_TRACKING_ID" && eventValue != "ffffffff"
-
-		events = append(events, EventInfo{Epoch: epoch, Source: eventDriverName, Touch: touched, Position: position})
-		position++
-	}
-
-	return events, nil
-}
-
-func SplitEvents(filename string, info []EventInfo) ([]EventData, error) {
-	data := []EventData{}
-
-	allbytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	previousIndex := 0
-	instructionSize := DetectInstructionSize(allbytes)
-
-	if instructionSize == -1 {
-		return nil, errors.New("InstructionSize is not detectable")
-	}
-
-	for i := 1; i < len(info); i++ {
-		instructionStep := info[i].Position - info[previousIndex].Position
-		timeStep := info[i].Epoch - info[previousIndex].Epoch
-
-		if info[i].Touch || instructionStep*instructionSize >= 2048 || timeStep >= 0.15 {
-			var timeDiff float64
-
-			if info[i].Touch {
-				timeDiff = info[i].Epoch - info[i-1].Epoch
-			} else {
-				timeDiff = info[i].Epoch - info[previousIndex].Epoch
-			}
-
-			bytes := allbytes[(previousIndex * instructionSize):(i * instructionSize)]
-			data = append(data, EventData{Data: bytes, Time: timeDiff, Source: info[i].Source})
-			previousIndex = i
+		epochUsec, err := strconv.ParseInt(matches[2], 10, 32)
+		if err != nil {
+			return nil, err
 		}
+
+		eventDriverName := matches[3]
+
+		eventType, err := strconv.ParseUint(matches[4], 16, 16)
+		if err != nil {
+			return nil, err
+		}
+
+		eventCode, err := strconv.ParseUint(matches[5], 16, 16)
+		if err != nil {
+			return nil, err
+		}
+
+		eventValue, err := strconv.ParseUint(matches[6], 16, 32)
+		if err != nil {
+			return nil, err
+		}
+
+		events, exists := eventsMap[eventDriverName]
+		if !exists {
+			events = []Event{}
+		}
+		events = append(events, Event{
+			EpochSec:  epochSec,
+			EpochUsec: epochUsec,
+			Type:      uint16(eventType),
+			Code:      uint16(eventCode),
+			Value:     uint32(eventValue),
+		})
+		eventsMap[eventDriverName] = events
 	}
 
-	lastIndex := len(info) - 1
-	bytes := allbytes[(previousIndex * instructionSize):((lastIndex + 1) * instructionSize)]
-	data = append(data, EventData{Data: bytes, Time: info[lastIndex].Epoch - info[previousIndex].Epoch, Source: info[lastIndex].Source})
-
-	return data, nil
+	return eventsMap, nil
 }
 
-func WriteInputData(project *Project, data []EventData) {
-	for i := 0; i < len(data); i++ {
-		filename := project.InputFile(i)
-		ioutil.WriteFile(filename, data[i].Data, 0644)
+func WriteEvent(project *Project, eventsMap map[string][]Event) {
+	for eventDriverName, events := range eventsMap {
+		var data bytes.Buffer
+		for _, event := range events {
+			data.WriteString(fmt.Sprintf("%d.%06d %04x %04x %08x\n",
+				event.EpochSec,
+				event.EpochUsec,
+				event.Type,
+				event.Code,
+				event.Value))
+		}
+
+		filename := project.InputFile(eventDriverName)
+
+		err := ioutil.WriteFile(filename, data.Bytes(), 0644)
+		AssertError(err)
 	}
 }
 
-func WriteShell(project *Project, data []EventData) {
-	shellHeader := `#!/bin/sh
+func WriteShell(project *Project, eventsMap map[string][]Event) {
+	var buffer bytes.Buffer
+
+	buffer.WriteString(`#!/bin/sh
 cd $(dirname $0)
+CPU_ABI=$(getprop ro.product.cpu.abi)
+`)
 
-`
-	fileHandle, err := os.Create(project.RunShellFile)
-	AssertError(err)
-	defer fileHandle.Close()
-
-	fileHandle.Write([]byte(shellHeader))
-
-	for i := 0; i < len(data); i++ {
-		command := strings.Join([]string{
-			fmt.Sprintf("cat %s > /dev/input/%s", project.InputFileWithoutRootDir(i), data[i].Source),
-			fmt.Sprintf("echo sleep %f", data[i].Time),
-			fmt.Sprintf("sleep %f", data[i].Time),
-			"\n",
-		}, "\n")
-		fileHandle.Write([]byte(command))
+	for eventDriverName, _ := range eventsMap {
+		buffer.WriteString(fmt.Sprintf(
+			"./bin/${CPU_ABI}/cathand /dev/input/%s %s\n",
+			eventDriverName,
+			project.InputFileWithoutRootDir(eventDriverName)))
 	}
+
+	err := ioutil.WriteFile(project.RunShellFile, buffer.Bytes(), 0755)
+	AssertError(err)
+}
+
+func CopyExecutable(project *Project) {
+	cmd := exec.Command("rsync", "-av", "android_bin/obj/", project.BinDir+"/")
+	AssertError(cmd.Run())
 }
 
 func CommandCompose(projectName string) {
@@ -147,21 +136,17 @@ func CommandCompose(projectName string) {
 		panic("Cannot find record directory: " + recordProject.RootDir)
 	}
 	if !FileExists(recordProject.EventFile) {
-		panic("Cannot find event file : " + recordProject.EventFile)
+		panic("Cannot find event file: " + recordProject.EventFile)
 	}
 
-	infos, err := ParseEventText(recordProject.EventFile)
-	AssertError(err)
-
-	recordEventDataFile := recordProject.DeviceFile(infos[0].Source)
-	data, err := SplitEvents(recordEventDataFile, infos)
+	eventsMap, err := ParseEventFromFile(recordProject.EventFile)
 	AssertError(err)
 
 	playProject := NewProject(projectName, ".play", "")
-
 	RemoveFile(playProject.RootDir)
 	MakeDirectory(playProject.RootDir)
 	MakeDirectory(playProject.InputDir)
-	WriteInputData(&playProject, data)
-	WriteShell(&playProject, data)
+	WriteEvent(&playProject, eventsMap)
+	WriteShell(&playProject, eventsMap)
+	CopyExecutable(&playProject)
 }

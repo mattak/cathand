@@ -62,6 +62,8 @@ func RecordContinuouslyWithStopTrigger(sdcardProject *Project, sdcardFiles chan 
 	signalCh <- syscall.SIGINT
 
 	<-countCh
+
+	time.Sleep(500 * time.Millisecond)
+
 	sdcardFiles <- nil
 }
-

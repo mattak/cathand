@@ -8,6 +8,7 @@ type Project struct {
 	VideoDir     string
 	InputDir     string
 	DeviceDir    string
+	BinDir       string
 	RunShellFile string
 	EventFile    string
 	SizeFile     string
@@ -22,6 +23,7 @@ func NewProject(name string, extension string, prefix string) Project {
 		VideoDir:     root + "/video",
 		InputDir:     root + "/input",
 		DeviceDir:    root + "/device",
+		BinDir:       root + "/bin",
 		RunShellFile: root + "/run.sh",
 		EventFile:    root + "/event.log",
 		SizeFile:     root + "/wm_size.log",
@@ -32,12 +34,12 @@ func (p *Project) VideoFile(count int) string {
 	return p.VideoDir + fmt.Sprintf("/%02d.mp4", count)
 }
 
-func (p *Project) InputFile(count int) string {
-	return p.InputDir + fmt.Sprintf("/%05d.bytes", count)
+func (p *Project) InputFile(eventDriverName string) string {
+	return p.InputDir + fmt.Sprintf("/%s.log", eventDriverName)
 }
 
-func (p *Project) InputFileWithoutRootDir(count int) string {
-	return fmt.Sprintf("input/%05d.bytes", count)
+func (p *Project) InputFileWithoutRootDir(eventDriverName string) string {
+	return fmt.Sprintf("input/%s.log", eventDriverName)
 }
 
 func (p *Project) DeviceFile(deviceName string) string {

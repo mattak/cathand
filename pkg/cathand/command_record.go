@@ -58,7 +58,7 @@ func CommandRecord(projectName string) {
 
 	// 3.2. go getevent.log
 	eventTextResult := make(chan []byte)
-	go RunWaitKillWrite(eventTextResult, &eventWg, "adb", "shell", "getevent", "-lt")
+	go RunWaitKillWrite(eventTextResult, &eventWg, "adb", "shell", "getevent", "-t")
 
 	// 3.3. go recording
 	go RecordContinuously(&sdcardProject, sdcardVideoFilesCh)
