@@ -10,6 +10,20 @@ import (
 	"os"
 )
 
+type VerifyOption struct {
+	SimilarityThreshold           float64
+	ColorThreshold                float64
+	SequentialFalseFrameThreshold int
+}
+
+func NewVerifyOption() VerifyOption {
+	return VerifyOption{
+		SimilarityThreshold:           0.7,
+		ColorThreshold:                0.1,
+		SequentialFalseFrameThreshold: 5,
+	}
+}
+
 func ReadImageFile(filename string) (image.Image, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -191,7 +205,7 @@ func SearchBestMatch(targetImage image.Image, images []image.Image, colorThresho
 	return matchIndex, matchSimilarity
 }
 
-func CommandVerify(project1 Project, project2 Project) {
+func CommandVerify(project1 Project, project2 Project, verifyOption VerifyOption) {
 	project1ImageFiles, err := ListUpFilePathes(project1.ImageDir)
 	AssertError(err)
 	project2ImageFiles, err := ListUpFilePathes(project2.ImageDir)
@@ -203,17 +217,17 @@ func CommandVerify(project1 Project, project2 Project) {
 	AssertError(err)
 
 	startIndex := 0
-	sequencialFalseCount := 0
-	sequencialFalseAdaptiveCount := 5
+	sequentialFalseFrameCount := 0
 
 	for index, targetImage := range images1 {
-		matchIndex, similarity := SearchFirstMatch(targetImage, images2, startIndex, 0.1, 0.7)
+		matchIndex, similarity := SearchFirstMatch(
+			targetImage, images2, startIndex, verifyOption.ColorThreshold, verifyOption.SimilarityThreshold)
 
 		if matchIndex >= 0 {
 			fmt.Printf("%.3f\t%s\t->\t%s\n", similarity, project1ImageFiles[index], project2ImageFiles[matchIndex])
-			sequencialFalseCount = 0
+			sequentialFalseFrameCount = 0
 		} else {
-			sequencialFalseCount++
+			sequentialFalseFrameCount++
 			fmt.Printf("%.3f\t%s\t->\t%s\n", similarity, project1ImageFiles[index], "null")
 		}
 
@@ -221,7 +235,7 @@ func CommandVerify(project1 Project, project2 Project) {
 			startIndex = matchIndex
 		}
 
-		if sequencialFalseCount > sequencialFalseAdaptiveCount {
+		if sequentialFalseFrameCount > verifyOption.SequentialFalseFrameThreshold {
 			panic(fmt.Sprintf("VerificationError: sequencial false count is more than adaptive count"))
 		}
 	}

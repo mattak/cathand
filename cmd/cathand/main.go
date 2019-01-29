@@ -13,18 +13,41 @@ func main() {
 	app.Name = "cathand"
 	app.Usage = "record then play just like you on android device"
 	app.Version = "0.0.1"
+	recordingFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "size",
+			Value: "720x1280",
+			Usage: "screen size of recording video",
+		},
+		cli.IntFlag{
+			Name:  "bit-rate",
+			Value: 4000000,
+			Usage: "bit rate of recording video",
+		},
+		cli.IntFlag{
+			Name:  "time-limit",
+			Value: 10,
+			Usage: "time limit of each recording video. limit max is 180 sec",
+		},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:      "record",
 			Aliases:   []string{"r"},
 			Usage:     "record touch events",
 			ArgsUsage: "[project_name]",
+			Flags:     recordingFlags,
 			Action: func(c *cli.Context) error {
 				if len(c.Args()) <= 0 {
 					return errors.New("ERROR: missing project name")
 				}
 				project := cathand.NewProject(c.Args().First(), "")
-				cathand.CommandRecord(project)
+				option := cathand.NewRecordOption()
+				option.Size = c.String("size")
+				option.BitRate = c.Uint("bit-rate")
+				option.TimeLimit = c.Uint("time-limit")
+
+				cathand.CommandRecord(project, option)
 				return nil
 			},
 		},
@@ -48,13 +71,20 @@ func main() {
 			Aliases:   []string{"p"},
 			Usage:     "play playable touch events",
 			ArgsUsage: "[play_project_name] [result_project_name]",
+			Flags:     recordingFlags,
 			Action: func(c *cli.Context) error {
 				if len(c.Args()) <= 1 {
 					return errors.New("ERROR: requires 2 project name: [recorded_project_name] [play_project_name]")
 				}
 				playProject := cathand.NewProject(c.Args().Get(0), "")
 				resultProject := cathand.NewProject(c.Args().Get(1), "")
-				cathand.CommandPlay(playProject, resultProject)
+
+				option := cathand.NewRecordOption()
+				option.Size = c.String("size")
+				option.BitRate = c.Uint("bit-rate")
+				option.TimeLimit = c.Uint("time-limit")
+
+				cathand.CommandPlay(playProject, resultProject, option)
 				return nil
 			},
 		},
@@ -81,13 +111,35 @@ func main() {
 			Aliases:   []string{"v"},
 			Usage:     "verify recorded project and result project",
 			ArgsUsage: "[result_project_name] [record_project_name]",
+			Flags: []cli.Flag{
+				cli.Float64Flag{
+					Name: "similarity",
+					Value: 0.6,
+					Usage: "Similarity threshold. Percentage of matching pixels",
+				},
+				cli.Float64Flag{
+					Name: "color",
+					Value: 0.1,
+					Usage: "Color threshold. HSL distance of pixels",
+				},
+				cli.IntFlag{
+					Name: "false-frames",
+					Value: 5,
+					Usage: "The threshold count of sequential false matching frames",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				if len(c.Args()) <= 1 {
 					return errors.New("ERROR: requires 2 project name: [recorded_project_name] [result_project_name]")
 				}
 				project1 := cathand.NewProject(c.Args().Get(0), "")
 				project2 := cathand.NewProject(c.Args().Get(1), "")
-				cathand.CommandVerify(project1, project2)
+
+				verifyOption := cathand.NewVerifyOption()
+				verifyOption.SimilarityThreshold = c.Float64("similarity")
+				verifyOption.ColorThreshold = c.Float64("color")
+				verifyOption.SequentialFalseFrameThreshold = c.Int("false-frames")
+				cathand.CommandVerify(project1, project2, verifyOption)
 				return nil
 			},
 		},

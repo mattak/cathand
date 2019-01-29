@@ -34,7 +34,7 @@ func AdbRsync(fromLocalFolder string, toDeviceFolder string) {
 	}
 }
 
-func CommandPlay(playProject Project, resultProject Project) {
+func CommandPlay(playProject Project, resultProject Project, recordOption RecordOption) {
 	playDeviceProject := NewProject(playProject.Name, "/data/local/tmp/")
 	resultDeviceProject := NewProject(resultProject.Name, "/data/local/tmp/")
 
@@ -58,7 +58,7 @@ func CommandPlay(playProject Project, resultProject Project) {
 		stopTrigger.Add(1)
 		sdcardVideoFilesCh := make(chan []string, 1)
 
-		go RecordContinuouslyWithStopTrigger(&resultDeviceProject, sdcardVideoFilesCh, &stopTrigger)
+		go RecordContinuouslyWithStopTrigger(&resultDeviceProject, sdcardVideoFilesCh, &stopTrigger, recordOption)
 
 		RunWait("adb", "shell", "sh", playDeviceProject.RunShellFile)
 
