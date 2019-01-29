@@ -22,9 +22,8 @@ func GetInputDevices() []string {
 	return results
 }
 
-func CommandRecord(projectName string) {
-	project := NewProject(projectName, ".record", "")
-	sdcardProject := NewProject(projectName, ".record", "/sdcard/")
+func CommandRecord(project Project) {
+	sdcardProject := NewProject(project.Name, "/sdcard/")
 	sdcardVideoFilesCh := make(chan []string)
 
 	// 0. remove directory: sample.record

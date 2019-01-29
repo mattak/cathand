@@ -1,11 +1,15 @@
 package cathand
 
-import "fmt"
+import (
+	"fmt"
+	"path"
+)
 
 type Project struct {
 	Name         string
 	RootDir      string
 	VideoDir     string
+	ImageDir     string
 	InputDir     string
 	DeviceDir    string
 	BinDir       string
@@ -14,13 +18,14 @@ type Project struct {
 	SizeFile     string
 }
 
-func NewProject(name string, extension string, prefix string) Project {
-	root := prefix + name + extension
+func NewProject(name string, prefix string) Project {
+	root := prefix + name
 
 	return Project{
 		Name:         name,
 		RootDir:      root,
 		VideoDir:     root + "/video",
+		ImageDir:     root + "/image",
 		InputDir:     root + "/input",
 		DeviceDir:    root + "/device",
 		BinDir:       root + "/bin",
@@ -31,17 +36,21 @@ func NewProject(name string, extension string, prefix string) Project {
 }
 
 func (p *Project) VideoFile(count int) string {
-	return p.VideoDir + fmt.Sprintf("/%02d.mp4", count)
+	return path.Join(p.VideoDir, fmt.Sprintf("%02d.mp4", count))
 }
 
 func (p *Project) InputFile(eventDriverName string) string {
-	return p.InputDir + fmt.Sprintf("/%s.log", eventDriverName)
+	return path.Join(p.InputDir, fmt.Sprintf("%s.log", eventDriverName))
 }
 
 func (p *Project) InputFileWithoutRootDir(eventDriverName string) string {
 	return fmt.Sprintf("input/%s.log", eventDriverName)
 }
 
+func (p *Project) ImageFileFormat(prefix string) string {
+	return path.Join(p.ImageDir, prefix + "_%04d.png")
+}
+
 func (p *Project) DeviceFile(deviceName string) string {
-	return p.DeviceDir + "/" + deviceName
+	return path.Join(p.DeviceDir, deviceName)
 }

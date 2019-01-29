@@ -7,6 +7,7 @@ BINARY_NAME=cathand
 BINARY_DIR=bin
 
 all: test build
+install: build system_install
 
 .PHONY: test
 test:
@@ -25,8 +26,8 @@ clean:
 	$(GOCLEAN)
 	rm -r $(BINARY_DIR)
 
-.PHONY: install
-install:
+.PHONY: system_install
+system_install:
 	cd cmd/cathand && go install
 
 .PHONY: android
