@@ -34,11 +34,9 @@ func AdbRsync(fromLocalFolder string, toDeviceFolder string) {
 	}
 }
 
-func CommandPlay(projectName string) {
-	playProject := NewProject(projectName, ".play", "")
-	playDeviceProject := NewProject(projectName, ".play", "/data/local/tmp/")
-	resultProject := NewProject(projectName, ".result", "")
-	resultDeviceProject := NewProject(projectName, ".result", "/data/local/tmp/")
+func CommandPlay(playProject Project, resultProject Project) {
+	playDeviceProject := NewProject(playProject.Name, "/data/local/tmp/")
+	resultDeviceProject := NewProject(resultProject.Name, "/data/local/tmp/")
 
 	// 0. verify
 	{

@@ -108,9 +108,23 @@ func WriteEvent(project *Project, eventsMap map[string][]Event) {
 func WriteShell(project *Project, eventsMap map[string][]Event) {
 	var buffer bytes.Buffer
 
-	buffer.WriteString(`#!/bin/sh
+	buffer.WriteString(`#!/bin/sh -xe
 cd $(dirname $0)
 CPU_ABI=$(getprop ro.product.cpu.abi)
+
+# # Check package installation & launch app
+# PACKAGE="" # FIXME
+# DATA_URI="" # FIXME
+# INSTALLED=$(pm list packages $PACKAGE)
+# if [[ "$INSTALLED" != "package:$PACKAGE" ]]; then
+#   echo "not installed package $PACKAGE"
+#   exit 1
+# fi
+# 
+# am force-stop $PACKAGE
+# am start -a android.intent.action.VIEW -d "$DATA_URI"
+# sleep 30
+
 `)
 
 	for eventDriverName, _ := range eventsMap {
@@ -119,6 +133,10 @@ CPU_ABI=$(getprop ro.product.cpu.abi)
 			eventDriverName,
 			project.InputFileWithoutRootDir(eventDriverName)))
 	}
+
+	buffer.WriteString(`
+# am force-stop $PACKAGE
+`)
 
 	err := ioutil.WriteFile(project.RunShellFile, buffer.Bytes(), 0755)
 	AssertError(err)
@@ -129,9 +147,7 @@ func CopyExecutable(project *Project) {
 	RunWait("rsync", "-av", projectRoot + "android_bin/obj/", project.BinDir+"/")
 }
 
-func CommandCompose(projectName string) {
-	recordProject := NewProject(projectName, ".record", "")
-
+func CommandCompose(recordProject, playProject Project) {
 	if !FileExists(recordProject.RootDir) {
 		panic("Cannot find record directory: " + recordProject.RootDir)
 	}
@@ -142,7 +158,6 @@ func CommandCompose(projectName string) {
 	eventsMap, err := ParseEventFromFile(recordProject.EventFile)
 	AssertError(err)
 
-	playProject := NewProject(projectName, ".play", "")
 	RemoveFile(playProject.RootDir)
 	MakeDirectory(playProject.RootDir)
 	MakeDirectory(playProject.InputDir)

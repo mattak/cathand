@@ -23,7 +23,8 @@ func main() {
 				if len(c.Args()) <= 0 {
 					return errors.New("ERROR: missing project name")
 				}
-				cathand.CommandRecord(c.Args().First())
+				project := cathand.NewProject(c.Args().First(), "")
+				cathand.CommandRecord(project)
 				return nil
 			},
 		},
@@ -31,12 +32,14 @@ func main() {
 			Name:      "compose",
 			Aliases:   []string{"c"},
 			Usage:     "compose playable touch events from recorded data",
-			ArgsUsage: "[project_name]",
+			ArgsUsage: "[record_project_name] [play_project_name]",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) <= 0 {
-					return errors.New("ERROR: missing project name")
+				if len(c.Args()) <= 1 {
+					return errors.New("ERROR: requires 2 project name: [recorded_project_name] [play_project_name]")
 				}
-				cathand.CommandCompose(c.Args().First())
+				recordProject := cathand.NewProject(c.Args().Get(0), "")
+				playProject := cathand.NewProject(c.Args().Get(1), "")
+				cathand.CommandCompose(recordProject, playProject)
 				return nil
 			},
 		},
@@ -44,12 +47,47 @@ func main() {
 			Name:      "play",
 			Aliases:   []string{"p"},
 			Usage:     "play playable touch events",
-			ArgsUsage: "[project_name]",
+			ArgsUsage: "[play_project_name] [result_project_name]",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) <= 0 {
+				if len(c.Args()) <= 1 {
+					return errors.New("ERROR: requires 2 project name: [recorded_project_name] [play_project_name]")
+				}
+				playProject := cathand.NewProject(c.Args().Get(0), "")
+				resultProject := cathand.NewProject(c.Args().Get(1), "")
+				cathand.CommandPlay(playProject, resultProject)
+				return nil
+			},
+		},
+		{
+			Name:      "split",
+			Aliases:   []string{"s"},
+			Usage:     "split video into image segments",
+			ArgsUsage: "[project_name]+",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) <= 1 {
 					return errors.New("ERROR: missing project name")
 				}
-				cathand.CommandPlay(c.Args().First())
+
+				projects := make([]cathand.Project, len(c.Args()))
+				for i := 0; i < len(c.Args()); i++ {
+					projects[i] = cathand.NewProject(c.Args().Get(i), "")
+				}
+				cathand.CommandSplit(projects...)
+				return nil
+			},
+		},
+		{
+			Name:      "verify",
+			Aliases:   []string{"v"},
+			Usage:     "verify recorded project and result project",
+			ArgsUsage: "[result_project_name] [record_project_name]",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) <= 1 {
+					return errors.New("ERROR: requires 2 project name: [recorded_project_name] [result_project_name]")
+				}
+				project1 := cathand.NewProject(c.Args().Get(0), "")
+				project2 := cathand.NewProject(c.Args().Get(1), "")
+				cathand.CommandVerify(project1, project2)
 				return nil
 			},
 		},
