@@ -94,7 +94,7 @@ func main() {
 			Usage:     "split video into image segments",
 			ArgsUsage: "[project_name]+",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) <= 1 {
+				if len(c.Args()) <= 0 {
 					return errors.New("ERROR: missing project name")
 				}
 
