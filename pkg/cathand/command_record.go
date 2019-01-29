@@ -22,7 +22,7 @@ func GetInputDevices() []string {
 	return results
 }
 
-func CommandRecord(project Project) {
+func CommandRecord(project Project, recordOption RecordOption) {
 	sdcardProject := NewProject(project.Name, "/sdcard/")
 	sdcardVideoFilesCh := make(chan []string)
 
@@ -60,7 +60,7 @@ func CommandRecord(project Project) {
 	go RunWaitKillWrite(eventTextResult, &eventWg, "adb", "shell", "getevent", "-t")
 
 	// 3.3. go recording
-	go RecordContinuously(&sdcardProject, sdcardVideoFilesCh)
+	go RecordContinuously(&sdcardProject, sdcardVideoFilesCh, recordOption)
 
 	// 4. receive signal & stop 3 shells
 	<-sdcardVideoFilesCh

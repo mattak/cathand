@@ -10,7 +10,23 @@ import (
 	"time"
 )
 
-func RecordContinuously(sdcardProject *Project, sdcardFiles chan []string) {
+type RecordOption struct {
+	Size      string
+	BitRate   uint
+	TimeLimit uint
+}
+
+func NewRecordOption() RecordOption {
+	return RecordOption{
+		Size:      "720x1280",
+		BitRate:   4000000,
+		TimeLimit: 10,
+	}
+}
+
+func RecordContinuously(
+	sdcardProject *Project, sdcardFiles chan []string, option RecordOption,
+) {
 	countCh := make(chan int)
 
 	signalCh := make(chan os.Signal, 1)
@@ -19,15 +35,15 @@ func RecordContinuously(sdcardProject *Project, sdcardFiles chan []string) {
 	go RunSequentialSignalWait(signalCh, countCh, func(count int) *exec.Cmd {
 		fmt.Println("adb", "shell", "screenrecord",
 			sdcardProject.VideoFile(count),
-			"--size", "1280x720",
-			"--bit-rate", "4000000",
-			"--time-limit", "10")
+			"--size", option.Size,
+			"--bit-rate", fmt.Sprint(option.BitRate),
+			"--time-limit", fmt.Sprint(option.TimeLimit))
 
 		return exec.Command("adb", "shell", "screenrecord",
 			sdcardProject.VideoFile(count),
-			"--size", "1280x720",
-			"--bit-rate", "4000000",
-			"--time-limit", "10")
+			"--size", option.Size,
+			"--bit-rate", fmt.Sprint(option.BitRate),
+			"--time-limit", fmt.Sprint(option.TimeLimit))
 	})
 
 	<-countCh
@@ -38,7 +54,10 @@ func RecordContinuously(sdcardProject *Project, sdcardFiles chan []string) {
 	sdcardFiles <- nil
 }
 
-func RecordContinuouslyWithStopTrigger(sdcardProject *Project, sdcardFiles chan []string, stopTrigger *sync.WaitGroup) {
+func RecordContinuouslyWithStopTrigger(
+	sdcardProject *Project, sdcardFiles chan []string, stopTrigger *sync.WaitGroup,
+	option RecordOption,
+) {
 	countCh := make(chan int, 1)
 
 	signalCh := make(chan os.Signal, 1)
@@ -47,15 +66,15 @@ func RecordContinuouslyWithStopTrigger(sdcardProject *Project, sdcardFiles chan 
 	go RunSequentialSignalWait(signalCh, countCh, func(count int) *exec.Cmd {
 		fmt.Println("adb", "shell", "screenrecord",
 			sdcardProject.VideoFile(count),
-			"--size", "1280x720",
-			"--bit-rate", "4000000",
-			"--time-limit", "10")
+			"--size", option.Size,
+			"--bit-rate", fmt.Sprint(option.BitRate),
+			"--time-limit", fmt.Sprint(option.TimeLimit))
 
 		return exec.Command("adb", "shell", "screenrecord",
 			sdcardProject.VideoFile(count),
-			"--size", "1280x720",
-			"--bit-rate", "4000000",
-			"--time-limit", "10")
+			"--size", option.Size,
+			"--bit-rate", fmt.Sprint(option.BitRate),
+			"--time-limit", fmt.Sprint(option.TimeLimit))
 	})
 
 	stopTrigger.Wait()
