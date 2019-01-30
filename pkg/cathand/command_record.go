@@ -33,6 +33,7 @@ func CommandRecord(project Project, recordOption RecordOption) {
 	MakeDirectory(project.RootDir)
 	MakeDirectory(project.DeviceDir)
 	MakeDirectory(project.VideoDir)
+	RunWait("adb", "shell", "rm", "-r", sdcardProject.VideoDir)
 	RunWait("adb", "shell", "mkdir", "-p", sdcardProject.VideoDir)
 
 	// 2. save getprop.log
