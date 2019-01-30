@@ -47,8 +47,8 @@ func CommandPlay(playProject Project, resultProject Project, recordOption Record
 
 	// 1. push
 	{
-		//RunWait("adb", "push", playProject.RootDir+"/", playDeviceProject.RootDir)
 		AdbRsync(playProject.RootDir, playDeviceProject.RootDir)
+		RunWait("adb", "shell", "rm", "-r", resultDeviceProject.VideoDir)
 		RunWait("adb", "shell", "mkdir", "-p", resultDeviceProject.VideoDir)
 	}
 
