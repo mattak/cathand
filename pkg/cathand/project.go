@@ -11,7 +11,6 @@ type Project struct {
 	VideoDir     string
 	ImageDir     string
 	InputDir     string
-	DeviceDir    string
 	BinDir       string
 	RunShellFile string
 	EventFile    string
@@ -27,7 +26,6 @@ func NewProject(name string, prefix string) Project {
 		VideoDir:     root + "/video",
 		ImageDir:     root + "/image",
 		InputDir:     root + "/input",
-		DeviceDir:    root + "/device",
 		BinDir:       root + "/bin",
 		RunShellFile: root + "/run.sh",
 		EventFile:    root + "/event.log",
@@ -49,8 +47,4 @@ func (p *Project) InputFileWithoutRootDir(eventDriverName string) string {
 
 func (p *Project) ImageFileFormat(prefix string) string {
 	return path.Join(p.ImageDir, prefix + "_%04d.png")
-}
-
-func (p *Project) DeviceFile(deviceName string) string {
-	return path.Join(p.DeviceDir, deviceName)
 }
