@@ -55,6 +55,6 @@ cathand split sample.record sample.result
 verify image differences of auto play result and initial result
 
 ```shell-session
-cathand verify sample.record sample.result
+cathand verify sample.record sample.result sample.report
 ```
 

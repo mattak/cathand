@@ -110,36 +110,37 @@ func main() {
 			Name:      "verify",
 			Aliases:   []string{"v"},
 			Usage:     "verify recorded project and result project",
-			ArgsUsage: "[result_project_name] [record_project_name]",
+			ArgsUsage: "[result_project_name] [record_project_name] [report_project_name]",
 			Flags: []cli.Flag{
 				cli.Float64Flag{
-					Name: "similarity",
+					Name:  "similarity",
 					Value: 0.6,
 					Usage: "Similarity threshold. Percentage of matching pixels",
 				},
 				cli.Float64Flag{
-					Name: "color",
+					Name:  "color",
 					Value: 0.1,
 					Usage: "Color threshold. HSL distance of pixels",
 				},
 				cli.IntFlag{
-					Name: "false-frames",
+					Name:  "false-frames",
 					Value: 5,
 					Usage: "The threshold count of sequential false matching frames",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) <= 1 {
-					return errors.New("ERROR: requires 2 project name: [recorded_project_name] [result_project_name]")
+				if len(c.Args()) <= 2 {
+					return errors.New("ERROR: requires 3 project name: [recorded_project] [result_project] [report_project]")
 				}
 				project1 := cathand.NewProject(c.Args().Get(0), "")
 				project2 := cathand.NewProject(c.Args().Get(1), "")
+				reportProject := cathand.NewProject(c.Args().Get(2), "")
 
 				verifyOption := cathand.NewVerifyOption()
 				verifyOption.SimilarityThreshold = c.Float64("similarity")
 				verifyOption.ColorThreshold = c.Float64("color")
 				verifyOption.SequentialFalseFrameThreshold = c.Int("false-frames")
-				cathand.CommandVerify(project1, project2, verifyOption)
+				cathand.CommandVerify(project1, project2, reportProject, verifyOption)
 				return nil
 			},
 		},

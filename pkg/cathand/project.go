@@ -48,3 +48,11 @@ func (p *Project) InputFileWithoutRootDir(eventDriverName string) string {
 func (p *Project) ImageFileFormat(prefix string) string {
 	return path.Join(p.ImageDir, prefix + "_%04d.png")
 }
+
+func (p *Project) RelativeFile(dir, file string) string {
+	return path.Join(dir, file)
+}
+
+func (p *Project) ReportHtmlFile() string {
+	return path.Join(p.RootDir, "index.html")
+}
