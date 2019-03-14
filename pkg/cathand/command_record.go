@@ -14,8 +14,7 @@ func CommandRecord(project Project, recordOption RecordOption) {
 
 	// 1. create directory: sample.record
 	MakeDirectory(project.RootDir)
-	MakeDirectory(project.VideoDir)
-	RunWait("adb", "shell", "rm", "-r", sdcardProject.VideoDir)
+	RunWait("adb", "shell", "rm", "-rf", sdcardProject.VideoDir)
 	RunWait("adb", "shell", "mkdir", "-p", sdcardProject.VideoDir)
 
 	// 2. save getprop.log
@@ -45,6 +44,6 @@ func CommandRecord(project Project, recordOption RecordOption) {
 	ioutil.WriteFile(project.EventFile, NormalizeLineFeedBytes(<-eventTextResult), 0644)
 
 	// 6. pull files
-	RunWait("adb", "pull", sdcardProject.VideoDir, project.VideoDir)
+	RunWait("adb", "pull", sdcardProject.VideoDir + "/", project.VideoDir + "/")
 	RunWait("adb", "shell", "rm", "-r", sdcardProject.RootDir)
 }
